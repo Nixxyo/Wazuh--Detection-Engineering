@@ -1,0 +1,152 @@
+<!-- Modify it at your will. -->
+
+
+<!-- ===============================
+     UniFi Rules
+     =============================== -->
+<group name="unifi,">
+
+
+<!--=============================-->
+<!--        UNIFI ACCESS POINT-->
+<!--=============================-->
+
+
+  <rule id="100500" level="3">
+    <decoded_as>unifi-ap</decoded_as>
+    <description>UniFi AP kernel message: $(system_name)</description>
+    <group>unifi_ap,</group>
+  </rule>
+
+  <rule id="100501" level="3">
+    <decoded_as>unifi-ap1</decoded_as>
+    <description>UniFi AP system process event: $(system_name)</description>
+    <group>unifi_ap,</group>
+  </rule>
+
+  <rule id="100502" level="3">
+    <decoded_as>unifi-ap-neighbor</decoded_as>
+    <description>UniFi AP neighbor update: $(system_name) sees $(neighbor_mac) on channel $(channel)</description>
+    <group>unifi_ap,unifi_ap_neighbor,</group>
+  </rule>
+
+  <rule id="100503" level="3">
+    <decoded_as>unifi-ap-sta</decoded_as>
+    <description>UniFi AP client association $(event_type): $(client_mac) on $(vap)</description>
+    <group>unifi_ap,unifi_ap_client,</group>
+  </rule>
+
+  <rule id="100504" level="6">
+    <if_sid>100500</if_sid>
+    <match>ol_ath_wifi_ssr</match>
+    <description>UniFi AP WiFi radio subsystem restart (SSR): $(system_name)</description>
+    <group>unifi_ap,unifi_ap_radio,</group>
+  </rule>
+
+  <rule id="100505" level="3">
+    <if_sid>100501</if_sid>
+    <match>Trigger rrm scan</match>
+    <description>UniFi AP RRM channel scan triggered: $(system_name)</description>
+    <group>unifi_ap,unifi_ap_rrm,</group>
+  </rule>
+
+  <rule id="100506" level="5">
+    <if_sid>100503</if_sid>
+    <field name="event_type" type="pcre2" negate="yes">^success$</field>
+    <description>UniFi AP client association FAILED ($(event_type), status $(assoc_status)): $(client_mac) on $(vap)</description>
+    <group>unifi_ap,unifi_ap_client,</group>
+  </rule>
+
+  <rule id="100507" level="4">
+    <if_sid>100503</if_sid>
+    <field name="dns_timeouts" type="pcre2">^[1-9]</field>
+    <description>UniFi AP client DNS timeouts ($(dns_timeouts)): $(client_mac) on $(vap)</description>
+    <group>unifi_ap,unifi_ap_client,</group>
+  </rule>
+
+
+<!--=============================  -->
+<!--        UNIFI SWITCH-->
+<!--=============================-->
+
+
+  <rule id="100600" level="3">
+    <decoded_as>unifi-switch</decoded_as>
+    <description>UniFi Switch event: $(system_name)</description>
+    <group>unifi_switch,</group>
+  </rule>
+  
+  <rule id="100601" level="3">
+    <decoded_as>unifi-switch-link</decoded_as>
+    <description>UniFi Switch port $(port) link $(link_state) on $(system_name)</description>
+    <group>unifi_switch,unifi_switch_link,</group>
+  </rule>
+
+  <rule id="100602" level="5">
+    <if_sid>100601</if_sid>
+    <field name="link_state" type="pcre2">^Down$</field>
+    <description>UniFi Switch port $(port) link DOWN on $(system_name)</description>
+    <group>unifi_switch,unifi_switch_link,</group>
+  </rule>
+
+  <rule id="100603" level="3">
+    <if_sid>100600</if_sid>
+    <match>DOT1S: Port</match>
+    <description>UniFi Switch STP port role change on $(system_name): $(action)</description>
+    <group>unifi_switch,unifi_switch_stp,</group>
+  </rule>  
+
+
+<!--=============================  -->
+<!--        UNIFI GATEWAY-->
+<!--=============================-->
+
+
+  <rule id="100700" level="3">
+    <decoded_as>unifi-gateway</decoded_as>
+    <description>UniFi Gateway $(program)[$(pid)]: $(action)</description>
+    <group>unifi_gateway,</group>
+  </rule>
+  
+  <rule id="100701" level="3">
+    <if_sid>100700</if_sid>
+    <match>MEM usage </match>
+    <description>UniFi Gateway memory usage: $(action)</description>
+    <group>unifi_gateway,unifi_gateway_memory,</group>
+  </rule>
+
+
+<!--=============================-->
+<!--        UNIFI FIREWALL-->
+<!--=============================-->
+
+
+  <rule id="100800" level="3">
+    <decoded_as>unifi-firewall</decoded_as>
+    <description>UniFi firewall [$(policy)]: $(srcip) to $(dstip):$(dstport) ($(protocol))</description>
+    <group>unifi_gateway,unifi_firewall,</group>
+  </rule>
+
+  <rule id="100801" level="3">
+    <if_sid>100800</if_sid>
+    <match type="pcre2">PROTO=UDP SPT=\d+ DPT=443 </match>
+    <description>UniFi firewall QUIC (UDP/443) [$(policy)]: $(srcip) to $(dstip)</description>
+    <group>unifi_gateway,unifi_firewall,unifi_firewall_quic,</group>
+  </rule>
+
+  <rule id="100802" level="3">
+    <if_sid>100800</if_sid>
+    <match type="pcre2">PROTO=TCP SPT=\d+ DPT=443 </match>
+    <description>UniFi firewall HTTPS (TCP/443) [$(policy)]: $(srcip) to $(dstip)</description>
+    <group>unifi_gateway,unifi_firewall,unifi_firewall_https,</group>
+  </rule>
+
+  <rule id="100803" level="4">
+    <if_sid>100800</if_sid>
+    <match type="pcre2">PROTO=TCP SPT=\d+ DPT=80 </match>
+    <description>UniFi firewall unencrypted HTTP (TCP/80) [$(policy)]: $(srcip) to $(dstip)</description>
+    <group>unifi_gateway,unifi_firewall,unifi_firewall_http,</group>
+  </rule>
+
+
+</group>

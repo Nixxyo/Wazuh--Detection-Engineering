@@ -1,0 +1,905 @@
+{
+  "$schema": "https://vega.github.io/schema/vega/v5.json",
+  "width": 4096,
+  "height": 2160,
+  "padding": 50,
+  "autosize": "none",
+  "background": "#0a0e14",
+
+  "signals": [
+    {
+      "name": "rowHeight",
+      "value": 55
+    },
+    {
+      "name": "headerHeight",
+      "value": 70
+    },
+    {
+      "name": "selectedRow",
+      "value": null,
+      "on": [
+        {
+          "events": "@rowBackgrounds:click",
+          "update": "selectedRow === datum.row_number ? null : datum.row_number"
+        }
+      ]
+    }
+  ],
+
+  "data": [
+    {
+      "name": "rawAlerts",
+
+      "url": {
+        "index": "wazuh-alerts-*",
+        "body": {
+          "size": 35,
+          "sort": [
+            {
+              "timestamp": {
+                "order": "desc"
+              }
+            }
+          ],
+          "_source": [
+            "timestamp",
+            "agent.id",
+            "agent.ip",
+            "agent.name",
+            "agent.os.name",
+            "syscheck.path",
+            "syscheck.event",
+            "syscheck.mode",
+            "syscheck.perm_after",
+            "syscheck.uname_after",
+            "syscheck.gname_after",
+            "syscheck.uid_after",
+            "syscheck.gid_after",
+            "syscheck.size_after",
+            "syscheck.value_name",
+            "syscheck.value_type",
+            "syscheck.changed_attributes",
+            "syscheck.arch",
+            "decoder.name",
+            "rule.description",
+            "rule.id"
+          ],
+          "query": {
+            "bool": {
+              "must": [
+                {
+                  "exists": {
+                    "field": "syscheck.event"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+
+      "format": {
+        "property": "hits.hits"
+      },
+
+      "transform": [
+        {
+          "type": "formula",
+          "as": "timestamp",
+          "expr": "datum._source.timestamp ? datum._source.timestamp : 'N/A'"
+        },
+        {
+          "type": "formula",
+          "as": "agent_id",
+          "expr": "datum._source.agent && datum._source.agent.id ? datum._source.agent.id : 'N/A'"
+        },
+        {
+          "type": "formula",
+          "as": "agent_ip",
+          "expr": "datum._source.agent && datum._source.agent.ip ? datum._source.agent.ip : 'N/A'"
+        },
+        {
+          "type": "formula",
+          "as": "agent_name",
+          "expr": "datum._source.agent && datum._source.agent.name ? datum._source.agent.name : 'N/A'"
+        },
+        {
+          "type": "formula",
+          "as": "object_path",
+          "expr": "datum._source.syscheck && datum._source.syscheck.path ? datum._source.syscheck.path + (datum._source.syscheck.value_name ? ' / Value: ' + datum._source.syscheck.value_name : '') : 'N/A'"
+        },
+        {
+          "type": "formula",
+          "as": "event",
+          "expr": "datum._source.syscheck && datum._source.syscheck.event ? datum._source.syscheck.event : 'N/A'"
+        },
+        {
+          "type": "formula",
+          "as": "mode",
+          "expr": "datum._source.syscheck && datum._source.syscheck.mode ? datum._source.syscheck.mode : 'N/A'"
+        },
+        {
+          "type": "formula",
+          "as": "perms",
+          "expr": "datum._source.syscheck && datum._source.syscheck.perm_after ? datum._source.syscheck.perm_after : 'N/A'"
+        },
+        {
+          "type": "formula",
+          "as": "perm_code",
+          "expr": "datum._source.syscheck && datum._source.syscheck.perm_after && length(datum._source.syscheck.perm_after) >= 9 ? (if(substring(datum._source.syscheck.perm_after,0,1)=='r',4,0) + if(substring(datum._source.syscheck.perm_after,1,2)=='w',2,0) + if(substring(datum._source.syscheck.perm_after,2,3)=='x',1,0)) * 100 + (if(substring(datum._source.syscheck.perm_after,3,4)=='r',4,0) + if(substring(datum._source.syscheck.perm_after,4,5)=='w',2,0) + if(substring(datum._source.syscheck.perm_after,5,6)=='x',1,0)) * 10 + if(substring(datum._source.syscheck.perm_after,6,7)=='r',4,0) + if(substring(datum._source.syscheck.perm_after,7,8)=='w',2,0) + if(substring(datum._source.syscheck.perm_after,8,9)=='x',1,0) : 'N/A'"
+        },
+        {
+          "type": "formula",
+          "as": "changed_attributes",
+          "expr": "datum._source.syscheck && datum._source.syscheck.changed_attributes ? join(datum._source.syscheck.changed_attributes, ', ') : 'N/A'"
+        },
+        {
+          "type": "formula",
+          "as": "owner",
+          "expr": "datum._source.syscheck && datum._source.syscheck.uname_after ? datum._source.syscheck.uname_after : (datum._source.syscheck && datum._source.syscheck.gname_after ? datum._source.syscheck.gname_after : 'N/A')"
+        },
+        {
+          "type": "formula",
+          "as": "rule_description",
+          "expr": "datum._source.rule && datum._source.rule.description ? datum._source.rule.description : 'N/A'"
+        },
+        {
+          "type": "window",
+          "ops": [
+            "row_number"
+          ],
+          "as": [
+            "row_number"
+          ],
+          "sort": {
+            "field": "timestamp",
+            "order": "descending"
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "headersData",
+      "values": [
+        {
+          "index": 0,
+          "header": "TIMESTAMP",
+          "x": 80
+        },
+        {
+          "index": 1,
+          "header": "AGENT ID",
+          "x": 350
+        },
+        {
+          "index": 2,
+          "header": "AGENT IP",
+          "x": 520
+        },
+        {
+          "index": 3,
+          "header": "AGENT NAME",
+          "x": 760
+        },
+        {
+          "index": 4,
+          "header": "SYSCHECK PATH",
+          "x": 1050
+        },
+        {
+          "index": 5,
+          "header": "EVENT",
+          "x": 1800
+        },
+        {
+          "index": 6,
+          "header": "MODE",
+          "x": 2020
+        },
+        {
+          "index": 7,
+          "header": "PERMS",
+          "x": 2240
+        },
+        {
+          "index": 8,
+          "header": "PERM CODE",
+          "x": 2430
+        },
+        {
+          "index": 9,
+          "header": "CHANGED ATTRIBUTES",
+          "x": 2660
+        },
+        {
+          "index": 10,
+          "header": "OWNER",
+          "x": 2960
+        },
+        {
+          "index": 11,
+          "header": "RULE DESCRIPTION",
+          "x": 3190
+        }
+      ]
+    }
+  ],
+
+  "marks": [
+    {
+      "name": "titleBackground",
+      "type": "rect",
+      "encode": {
+        "enter": {
+          "x": {
+            "value": 0
+          },
+          "y": {
+            "value": 0
+          },
+          "width": {
+            "signal": "width"
+          },
+          "height": {
+            "value": 180
+          },
+          "fill": {
+            "value": "#111827"
+          }
+        }
+      }
+    },
+
+    {
+      "name": "title",
+      "type": "text",
+      "encode": {
+        "enter": {
+          "x": {
+            "value": 80
+          },
+          "y": {
+            "value": 65
+          },
+          "text": {
+            "value": "FILE INTEGRITY MONITORING"
+          },
+          "font": {
+            "value": "Times New Roman"
+          },
+          "fontSize": {
+            "value": 38
+          },
+          "fontWeight": {
+            "value": "bold"
+          },
+          "fill": {
+            "value": "#ffffff"
+          }
+        }
+      }
+    },
+
+    {
+      "name": "subtitle",
+      "type": "text",
+      "encode": {
+        "enter": {
+          "x": {
+            "value": 80
+          },
+          "y": {
+            "value": 115
+          },
+          "text": {
+            "value": "File and registry integrity events from Wazuh FIM"
+          },
+          "font": {
+            "value": "Segoe UI Historic"
+          },
+          "fontSize": {
+            "value": 21
+          },
+          "fill": {
+            "value": "#a0aec0"
+          }
+        }
+      }
+    },
+
+    {
+      "name": "headerBackground",
+      "type": "rect",
+      "encode": {
+        "enter": {
+          "x": {
+            "value": 50
+          },
+          "y": {
+            "value": 200
+          },
+          "width": {
+            "value": 3996
+          },
+          "height": {
+            "signal": "headerHeight"
+          },
+          "fill": {
+            "value": "#1f2937"
+          }
+        }
+      }
+    },
+
+    {
+      "name": "headers",
+      "type": "text",
+      "from": {
+        "data": "headersData"
+      },
+      "encode": {
+        "enter": {
+          "y": {
+            "value": 235
+          },
+          "font": {
+            "value": "Times New Roman"
+          },
+          "fontSize": {
+            "value": 20
+          },
+          "fontWeight": {
+            "value": "bold"
+          },
+          "fill": {
+            "value": "#ffffff"
+          },
+          "baseline": {
+            "value": "middle"
+          }
+        },
+        "update": {
+          "x": {
+            "field": "x"
+          },
+          "text": {
+            "field": "header"
+          }
+        }
+      }
+    },
+
+    {
+      "name": "rowBackgrounds",
+      "type": "rect",
+      "from": {
+        "data": "rawAlerts"
+      },
+      "encode": {
+        "enter": {
+          "x": {
+            "value": 50
+          },
+          "width": {
+            "value": 3996
+          },
+          "height": {
+            "signal": "rowHeight"
+          }
+        },
+        "update": {
+          "y": {
+            "signal": "270 + (datum.row_number - 1) * rowHeight"
+          },
+          "fill": [
+            {
+              "test": "selectedRow === datum.row_number",
+              "value": "#ff3366"
+            },
+            {
+              "test": "datum.row_number % 2 === 0",
+              "value": "#1a202c"
+            },
+            {
+              "value": "#2d3748"
+            }
+          ],
+          "stroke": [
+            {
+              "test": "selectedRow === datum.row_number",
+              "value": "#ff6b6b"
+            },
+            {
+              "value": "#374151"
+            }
+          ],
+          "strokeWidth": [
+            {
+              "test": "selectedRow === datum.row_number",
+              "value": 2
+            },
+            {
+              "value": 1
+            }
+          ]
+        }
+      }
+    },
+
+    {
+      "name": "timestampText",
+      "type": "text",
+      "from": {
+        "data": "rawAlerts"
+      },
+      "encode": {
+        "enter": {
+          "font": {
+            "value": "Segoe UI Historic"
+          },
+          "fontSize": {
+            "value": 17
+          },
+          "baseline": {
+            "value": "middle"
+          }
+        },
+        "update": {
+          "x": {
+            "value": 80
+          },
+          "y": {
+            "signal": "297 + (datum.row_number - 1) * rowHeight"
+          },
+          "text": {
+            "field": "timestamp"
+          },
+          "fill": {
+            "value": "#ffffff"
+          }
+        }
+      }
+    },
+
+    {
+      "name": "agentIdText",
+      "type": "text",
+      "from": {
+        "data": "rawAlerts"
+      },
+      "encode": {
+        "enter": {
+          "font": {
+            "value": "Segoe UI Historic"
+          },
+          "fontSize": {
+            "value": 17
+          },
+          "baseline": {
+            "value": "middle"
+          }
+        },
+        "update": {
+          "x": {
+            "value": 350
+          },
+          "y": {
+            "signal": "297 + (datum.row_number - 1) * rowHeight"
+          },
+          "text": {
+            "field": "agent_id"
+          },
+          "fill": {
+            "value": "#ffffff"
+          }
+        }
+      }
+    },
+
+    {
+      "name": "agentIpText",
+      "type": "text",
+      "from": {
+        "data": "rawAlerts"
+      },
+      "encode": {
+        "enter": {
+          "font": {
+            "value": "Segoe UI Historic"
+          },
+          "fontSize": {
+            "value": 17
+          },
+          "baseline": {
+            "value": "middle"
+          }
+        },
+        "update": {
+          "x": {
+            "value": 520
+          },
+          "y": {
+            "signal": "297 + (datum.row_number - 1) * rowHeight"
+          },
+          "text": {
+            "field": "agent_ip"
+          },
+          "fill": {
+            "value": "#ffffff"
+          }
+        }
+      }
+    },
+
+    {
+      "name": "agentNameText",
+      "type": "text",
+      "from": {
+        "data": "rawAlerts"
+      },
+      "encode": {
+        "enter": {
+          "font": {
+            "value": "Segoe UI Historic"
+          },
+          "fontSize": {
+            "value": 17
+          },
+          "baseline": {
+            "value": "middle"
+          }
+        },
+        "update": {
+          "x": {
+            "value": 760
+          },
+          "y": {
+            "signal": "297 + (datum.row_number - 1) * rowHeight"
+          },
+          "text": {
+            "field": "agent_name"
+          },
+          "fill": {
+            "value": "#ffffff"
+          }
+        }
+      }
+    },
+
+    {
+      "name": "objectPathText",
+      "type": "text",
+      "from": {
+        "data": "rawAlerts"
+      },
+      "encode": {
+        "enter": {
+          "font": {
+            "value": "Segoe UI Historic"
+          },
+          "fontSize": {
+            "value": 17
+          },
+          "baseline": {
+            "value": "middle"
+          },
+          "limit": {
+            "value": 650
+          }
+        },
+        "update": {
+          "x": {
+            "value": 1050
+          },
+          "y": {
+            "signal": "297 + (datum.row_number - 1) * rowHeight"
+          },
+          "text": {
+            "field": "object_path"
+          },
+          "fill": [
+            {
+              "test": "selectedRow === datum.row_number",
+              "value": "#60a5fa"
+            },
+            {
+              "value": "#ffffff"
+            }
+          ]
+        }
+      }
+    },
+
+    {
+      "name": "eventText",
+      "type": "text",
+      "from": {
+        "data": "rawAlerts"
+      },
+      "encode": {
+        "enter": {
+          "font": {
+            "value": "Segoe UI Historic"
+          },
+          "fontSize": {
+            "value": 17
+          },
+          "baseline": {
+            "value": "middle"
+          }
+        },
+        "update": {
+          "x": {
+            "value": 1800
+          },
+          "y": {
+            "signal": "297 + (datum.row_number - 1) * rowHeight"
+          },
+          "text": {
+            "field": "event"
+          },
+          "fill": [
+            {
+              "test": "selectedRow === datum.row_number",
+              "value": "#f59e0b"
+            },
+            {
+              "value": "#ffffff"
+            }
+          ]
+        }
+      }
+    },
+
+    {
+      "name": "modeText",
+      "type": "text",
+      "from": {
+        "data": "rawAlerts"
+      },
+      "encode": {
+        "enter": {
+          "font": {
+            "value": "Segoe UI Historic"
+          },
+          "fontSize": {
+            "value": 17
+          },
+          "baseline": {
+            "value": "middle"
+          }
+        },
+        "update": {
+          "x": {
+            "value": 2020
+          },
+          "y": {
+            "signal": "297 + (datum.row_number - 1) * rowHeight"
+          },
+          "text": {
+            "field": "mode"
+          },
+          "fill": {
+            "value": "#ffffff"
+          }
+        }
+      }
+    },
+
+    {
+      "name": "permsText",
+      "type": "text",
+      "from": {
+        "data": "rawAlerts"
+      },
+      "encode": {
+        "enter": {
+          "font": {
+            "value": "Segoe UI Historic"
+          },
+          "fontSize": {
+            "value": 17
+          },
+          "baseline": {
+            "value": "middle"
+          }
+        },
+        "update": {
+          "x": {
+            "value": 2240
+          },
+          "y": {
+            "signal": "297 + (datum.row_number - 1) * rowHeight"
+          },
+          "text": {
+            "field": "perms"
+          },
+          "fill": [
+            {
+              "test": "selectedRow === datum.row_number",
+              "value": "#f59e0b"
+            },
+            {
+              "value": "#ffffff"
+            }
+          ]
+        }
+      }
+    },
+
+    {
+      "name": "permCodeText",
+      "type": "text",
+      "from": {
+        "data": "rawAlerts"
+      },
+      "encode": {
+        "enter": {
+          "font": {
+            "value": "Segoe UI Historic"
+          },
+          "fontSize": {
+            "value": 17
+          },
+          "fontWeight": {
+            "value": "bold"
+          },
+          "baseline": {
+            "value": "middle"
+          }
+        },
+        "update": {
+          "x": {
+            "value": 2430
+          },
+          "y": {
+            "signal": "297 + (datum.row_number - 1) * rowHeight"
+          },
+          "text": {
+            "field": "perm_code"
+          },
+          "fill": [
+            {
+              "test": "selectedRow === datum.row_number",
+              "value": "#22d3ee"
+            },
+            {
+              "value": "#ffffff"
+            }
+          ]
+        }
+      }
+    },
+
+    {
+      "name": "changedAttributesText",
+      "type": "text",
+      "from": {
+        "data": "rawAlerts"
+      },
+      "encode": {
+        "enter": {
+          "font": {
+            "value": "Segoe UI Historic"
+          },
+          "fontSize": {
+            "value": 17
+          },
+          "baseline": {
+            "value": "middle"
+          },
+          "limit": {
+            "value": 280
+          }
+        },
+        "update": {
+          "x": {
+            "value": 2660
+          },
+          "y": {
+            "signal": "297 + (datum.row_number - 1) * rowHeight"
+          },
+          "text": {
+            "field": "changed_attributes"
+          },
+          "fill": [
+            {
+              "test": "selectedRow === datum.row_number",
+              "value": "#22d3ee"
+            },
+            {
+              "value": "#ffffff"
+            }
+          ]
+        }
+      }
+    },
+
+    {
+      "name": "ownerText",
+      "type": "text",
+      "from": {
+        "data": "rawAlerts"
+      },
+      "encode": {
+        "enter": {
+          "font": {
+            "value": "Segoe UI Historic"
+          },
+          "fontSize": {
+            "value": 17
+          },
+          "baseline": {
+            "value": "middle"
+          }
+        },
+        "update": {
+          "x": {
+            "value": 2960
+          },
+          "y": {
+            "signal": "297 + (datum.row_number - 1) * rowHeight"
+          },
+          "text": {
+            "field": "owner"
+          },
+          "fill": [
+            {
+              "test": "selectedRow === datum.row_number",
+              "value": "#22d3ee"
+            },
+            {
+              "value": "#ffffff"
+            }
+          ]
+        }
+      }
+    },
+
+    {
+      "name": "ruleDescriptionText",
+      "type": "text",
+      "from": {
+        "data": "rawAlerts"
+      },
+      "encode": {
+        "enter": {
+          "font": {
+            "value": "Segoe UI Historic"
+          },
+          "fontSize": {
+            "value": 17
+          },
+          "baseline": {
+            "value": "middle"
+          },
+          "limit": {
+            "value": 650
+          }
+        },
+        "update": {
+          "x": {
+            "value": 3190
+          },
+          "y": {
+            "signal": "297 + (datum.row_number - 1) * rowHeight"
+          },
+          "text": {
+            "field": "rule_description"
+          },
+          "fill": [
+            {
+              "test": "selectedRow === datum.row_number",
+              "value": "#fecaca"
+            },
+            {
+              "value": "#ffffff"
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

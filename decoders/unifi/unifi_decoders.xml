@@ -1,0 +1,118 @@
+<!-- Local Decoders -->
+
+<!-- Modify it at your will. -->
+<!-- Copyright (C) 2015, Wazuh Inc. -->
+
+<!--
+  - Allowed static fields:
+  - location   - where the log came from (only on FTS)
+  - srcuser    - extracts the source username
+  - dstuser    - extracts the destination (target) username
+  - user       - an alias to dstuser (only one of the two can be used)
+  - srcip      - source ip
+  - dstip      - dst ip
+  - srcport    - source port
+  - dstport    - destination port
+  - protocol   - protocol
+  - id         - event id
+  - url        - url of the event
+  - action     - event action (deny, drop, accept, etc)
+  - status     - event status (success, failure, etc)
+  - extra_data - Any extra data
+-->
+
+<decoder name="local_decoder_example">
+    <program_name>local_decoder_example</program_name>
+</decoder>
+
+
+
+
+
+<decoder name="unifi-gateway">
+    <prematch type="pcre2">\S*unifi-\S+\[\d+\]: </prematch>
+    <regex type="pcre2">(\S*unifi-\S+)\[(\d+)\]: (.+)$</regex>
+    <order>program,pid,action</order>
+</decoder>
+
+
+
+
+
+<decoder name="unifi-switch-link">
+    <parent>symantec-av</parent>
+    <prematch type="pcre2" offset="after_parent">^US-24-[^:]+: switch: TRAPMGR: Link (?:Up|Down): </prematch>
+    <regex type="pcre2" offset="after_parent">^(US-24-[^:]+): switch: TRAPMGR: Link (Up|Down): (\S+)$</regex>
+    <order>system_name,link_state,port</order>
+    <use_own_name>true</use_own_name>
+</decoder>
+
+<decoder name="unifi-switch">
+    <parent>symantec-av</parent>
+    <prematch type="pcre2" offset="after_parent">^US-24-</prematch>
+    <regex type="pcre2" offset="after_parent">^(US-24-[^:]+): (.+)$</regex>
+    <order>system_name,action</order>
+    <use_own_name>true</use_own_name>
+</decoder>
+
+
+
+
+
+<decoder name="unifi-ap-neighbor">
+    <parent>symantec-av</parent>
+    <prematch type="pcre2" offset="after_parent">^U6-Pro-[^:]+: kernel: \[\s*[0-9.]+\] ubnt_neighbor_update_ess_ap\(\): update </prematch>
+    <regex type="pcre2" offset="after_parent">^(U6-Pro-[^:]+): kernel: \[\s*([0-9.]+)\] ubnt_neighbor_update_ess_ap\(\): update \[([0-9a-fA-F:]+)\] band\((\d+)\), ch\((\d+)\), type\((\d+)\), list cnt\((\d+)\)$</regex>
+    <order>system_name,kernel_time,neighbor_mac,band,channel,neighbor_type,list_count</order>
+    <use_own_name>true</use_own_name>
+</decoder>
+
+<decoder name="unifi-ap">
+    <parent>symantec-av</parent>
+    <prematch type="pcre2" offset="after_parent">^U6-Pro-[^:]+: kernel: \[</prematch>
+    <regex type="pcre2" offset="after_parent">^(U6-Pro-[^:]+): kernel: \[\s*([0-9.]+)\] (.+)$</regex>
+    <order>system_name,kernel_time,action</order>
+    <use_own_name>true</use_own_name>
+</decoder>
+
+<decoder name="unifi-ap-sta">
+    <parent>symantec-av</parent>
+    <prematch type="pcre2" offset="after_parent">^U6-Pro-[^:]+: stahtd: stahtd\[\d+\]: \[STA-TRACKER\]\.stahtd_dump_event\(\): \{"message_type":"STA_ASSOC_TRACKER"</prematch>
+    <regex type="pcre2" offset="after_parent">^(U6-Pro-[^:]+): stahtd: stahtd\[(\d+)\]: .*?"message_type":"([^"]*)".*?"mac":"([^"]*)".*?"vap":"([^"]*)".*?"event_type":"([^"]*)".*?"assoc_status":"([^"]*)".*?"traffic_delta":"([^"]*)".*?"dns_responses":"([^"]*)".*?"dns_timeouts":"([^"]*)".*?"ip_delta":"([^"]*)".*?"ip_assign_type":"([^"]*)".*?"event_id":"([^"]*)".*?"arp_reply_gw_seen":"([^"]*)".*?"dns_resp_seen":"([^"]*)"</regex>
+    <order>system_name,pid,message_type,client_mac,vap,event_type,assoc_status,traffic_delta,dns_responses,dns_timeouts,ip_delta,ip_assign_type,event_id,arp_reply_gw_seen,dns_resp_seen</order>
+    <use_own_name>true</use_own_name>
+</decoder>
+
+<decoder name="unifi-ap1">
+    <parent>symantec-av</parent>
+    <prematch type="pcre2" offset="after_parent">^U6-Pro-</prematch>
+    <regex type="pcre2" offset="after_parent">^(U6-Pro-[^:]+): (.+)$</regex>
+    <order>system_name,action</order>
+    <use_own_name>true</use_own_name>
+</decoder>
+
+
+
+
+<decoder name="unifi-firewall">
+    <prematch type="pcre2">\[\S+-[A-Z]-\d+\] DESCR="</prematch>
+    <regex type="pcre2">\[(\S+)\] DESCR="([^"]*)" IN=(\S*) OUT=(\S*) MAC=(?:[0-9a-f]{2}:){6}((?:[0-9a-f]{2}:){5}[0-9a-f]{2}):[0-9a-f]{2}:[0-9a-f]{2} SRC=(\S+) DST=(\S+) .*?PROTO=(\S+) SPT=(\d+) DPT=(\d+)</regex>
+    <order>fw_rule,policy,in_iface,out_iface,src_mac,srcip,dstip,protocol,srcport,dstport</order>
+</decoder>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

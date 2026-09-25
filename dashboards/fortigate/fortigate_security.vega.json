@@ -1,0 +1,996 @@
+{
+  "$schema": "https://vega.github.io/schema/vega/v5.json",
+  "description": "FortiGate Security Dashboard - Firewall Events, Traffic, Authentication and VPN Activity",
+  "width": 4096,
+  "height": 2160,
+  "padding": 50,
+  "autosize": "none",
+  "background": "#0a0e14",
+
+  "signals": [
+    {
+      "name": "rowHeight",
+      "value": 55
+    },
+    {
+      "name": "headerHeight",
+      "value": 70
+    },
+    {
+      "name": "selectedRow",
+      "value": null,
+      "on": [
+        {
+          "events": "@rowBackgrounds:click",
+          "update": "datum.row_number"
+        }
+      ]
+    }
+  ],
+
+  "data": [
+    {
+      "name": "rawAlerts",
+      "url": {
+        "index": "wazuh-alerts-*",
+        "body": {
+          "size": 35,
+          "sort": [
+            {
+              "timestamp": {
+                "order": "desc"
+              }
+            }
+          ],
+          "query": {
+            "bool": {
+              "must": [
+                {
+                  "term": {
+                    "decoder.name": "fortinet-fortigate-firewall"
+                  }
+                },
+                {
+                  "range": {
+                    "timestamp": {
+                      "gte": "now-24h",
+                      "lte": "now"
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "format": {
+        "property": "hits.hits"
+      },
+      "transform": [
+        {
+          "type": "formula",
+          "as": "timestamp",
+          "expr": "datum._source.timestamp ? datum._source.timestamp : 'N/A'"
+        },
+
+        {
+          "type": "formula",
+          "as": "firewall",
+          "expr": "datum._source.data && datum._source.data.devname ? datum._source.data.devname : 'N/A'"
+        },
+
+        {
+          "type": "formula",
+          "as": "severity",
+          "expr": "datum._source.data && datum._source.data.level ? datum._source.data.level : (datum._source.rule && datum._source.rule.level ? toString(datum._source.rule.level) : 'N/A')"
+        },
+
+        {
+          "type": "formula",
+          "as": "type",
+          "expr": "datum._source.data ? ((datum._source.data.type ? datum._source.data.type : '') + (datum._source.data.type && datum._source.data.subtype ? ' / ' : '') + (datum._source.data.subtype ? datum._source.data.subtype : '')) : 'N/A'"
+        },
+
+        {
+          "type": "formula",
+          "as": "event",
+          "expr": "datum._source.data && datum._source.data.msg ? datum._source.data.msg : (datum._source.data && datum._source.data.logdesc ? datum._source.data.logdesc : (datum._source.rule && datum._source.rule.description ? datum._source.rule.description : 'N/A'))"
+        },
+
+        {
+          "type": "formula",
+          "as": "source_ip",
+          "expr": "datum._source.data ? (datum._source.data.srcip ? datum._source.data.srcip : (datum._source.data.remip ? datum._source.data.remip : 'N/A')) : 'N/A'"
+        },
+
+        {
+          "type": "formula",
+          "as": "destination_ip",
+          "expr": "datum._source.data ? (datum._source.data.dstip ? datum._source.data.dstip : (datum._source.data.locip ? datum._source.data.locip : 'N/A')) : 'N/A'"
+        },
+
+        {
+          "type": "formula",
+          "as": "user",
+          "expr": "datum._source.data ? (datum._source.data.dstuser ? datum._source.data.dstuser : (datum._source.data.user ? datum._source.data.user : 'N/A')) : 'N/A'"
+        },
+
+        {
+          "type": "formula",
+          "as": "action",
+          "expr": "datum._source.data && datum._source.data.action ? datum._source.data.action : 'N/A'"
+        },
+
+        {
+          "type": "formula",
+          "as": "service",
+          "expr": "datum._source.data && datum._source.data.service ? datum._source.data.service : 'N/A'"
+        },
+
+        {
+          "type": "formula",
+          "as": "protocol",
+          "expr": "datum._source.data && datum._source.data.proto != null ? (datum._source.data.proto == 6 ? 'TCP' : datum._source.data.proto == 17 ? 'UDP' : toString(datum._source.data.proto)) : 'N/A'"
+        },
+
+        {
+          "type": "window",
+          "ops": [
+            "row_number"
+          ],
+          "as": [
+            "row_number"
+          ]
+        }
+      ]
+    }
+  ],
+
+  "marks": [
+
+    {
+      "type": "rect",
+      "encode": {
+        "enter": {
+          "x": {
+            "value": 0
+          },
+          "y": {
+            "value": 0
+          },
+          "width": {
+            "signal": "width"
+          },
+          "height": {
+            "value": 120
+          },
+          "fill": {
+            "value": "#111821"
+          },
+          "cornerRadius": {
+            "value": 8
+          }
+        }
+      }
+    },
+
+    {
+      "type": "text",
+      "encode": {
+        "enter": {
+          "x": {
+            "value": 35
+          },
+          "y": {
+            "value": 45
+          },
+          "text": {
+            "value": "FORTIGATE SECURITY DASHBOARD"
+          },
+          "font": {
+            "value": "Times New Roman"
+          },
+          "fontSize": {
+            "value": 30
+          },
+          "fontWeight": {
+            "value": "bold"
+          },
+          "fill": {
+            "value": "#ffffff"
+          }
+        }
+      }
+    },
+
+    {
+      "type": "text",
+      "encode": {
+        "enter": {
+          "x": {
+            "value": 35
+          },
+          "y": {
+            "value": 85
+          },
+          "text": {
+            "value": "Real-time FortiGate firewall, authentication, VPN and security events"
+          },
+          "font": {
+            "value": "Segoe UI Historic"
+          },
+          "fontSize": {
+            "value": 18
+          },
+          "fill": {
+            "value": "#8b949e"
+          }
+        }
+      }
+    },
+
+    {
+      "type": "rect",
+      "encode": {
+        "enter": {
+          "x": {
+            "value": 0
+          },
+          "y": {
+            "signal": "headerHeight + 60"
+          },
+          "width": {
+            "signal": "width"
+          },
+          "height": {
+            "signal": "rowHeight"
+          },
+          "fill": {
+            "value": "#161d26"
+          },
+          "cornerRadius": {
+            "value": 6
+          }
+        }
+      }
+    },
+
+    {
+      "type": "text",
+      "encode": {
+        "enter": {
+          "x": {
+            "value": 25
+          },
+          "y": {
+            "signal": "headerHeight + 102"
+          },
+          "text": {
+            "value": "TIMESTAMP"
+          },
+          "font": {
+            "value": "Times New Roman"
+          },
+          "fontSize": {
+            "value": 20
+          },
+          "fontWeight": {
+            "value": "bold"
+          },
+          "fill": {
+            "value": "#ffffff"
+          }
+        }
+      }
+    },
+
+    {
+      "type": "text",
+      "encode": {
+        "enter": {
+          "x": {
+            "value": 300
+          },
+          "y": {
+            "signal": "headerHeight + 102"
+          },
+          "text": {
+            "value": "FIREWALL"
+          },
+          "font": {
+            "value": "Times New Roman"
+          },
+          "fontSize": {
+            "value": 20
+          },
+          "fontWeight": {
+            "value": "bold"
+          },
+          "fill": {
+            "value": "#ffffff"
+          }
+        }
+      }
+    },
+
+    {
+      "type": "text",
+      "encode": {
+        "enter": {
+          "x": {
+            "value": 800
+          },
+          "y": {
+            "signal": "headerHeight + 102"
+          },
+          "text": {
+            "value": "SEVERITY"
+          },
+          "font": {
+            "value": "Times New Roman"
+          },
+          "fontSize": {
+            "value": 20
+          },
+          "fontWeight": {
+            "value": "bold"
+          },
+          "fill": {
+            "value": "#ffffff"
+          }
+        }
+      }
+    },
+
+    {
+      "type": "text",
+      "encode": {
+        "enter": {
+          "x": {
+            "value": 1050
+          },
+          "y": {
+            "signal": "headerHeight + 102"
+          },
+          "text": {
+            "value": "TYPE"
+          },
+          "font": {
+            "value": "Times New Roman"
+          },
+          "fontSize": {
+            "value": 20
+          },
+          "fontWeight": {
+            "value": "bold"
+          },
+          "fill": {
+            "value": "#ffffff"
+          }
+        }
+      }
+    },
+
+    {
+      "type": "text",
+      "encode": {
+        "enter": {
+          "x": {
+            "value": 1350
+          },
+          "y": {
+            "signal": "headerHeight + 102"
+          },
+          "text": {
+            "value": "EVENT"
+          },
+          "font": {
+            "value": "Times New Roman"
+          },
+          "fontSize": {
+            "value": 20
+          },
+          "fontWeight": {
+            "value": "bold"
+          },
+          "fill": {
+            "value": "#ffffff"
+          }
+        }
+      }
+    },
+
+    {
+      "type": "text",
+      "encode": {
+        "enter": {
+          "x": {
+            "value": 2150
+          },
+          "y": {
+            "signal": "headerHeight + 102"
+          },
+          "text": {
+            "value": "SOURCE IP"
+          },
+          "font": {
+            "value": "Times New Roman"
+          },
+          "fontSize": {
+            "value": 20
+          },
+          "fontWeight": {
+            "value": "bold"
+          },
+          "fill": {
+            "value": "#ffffff"
+          }
+        }
+      }
+    },
+
+    {
+      "type": "text",
+      "encode": {
+        "enter": {
+          "x": {
+            "value": 2450
+          },
+          "y": {
+            "signal": "headerHeight + 102"
+          },
+          "text": {
+            "value": "DESTINATION IP"
+          },
+          "font": {
+            "value": "Times New Roman"
+          },
+          "fontSize": {
+            "value": 20
+          },
+          "fontWeight": {
+            "value": "bold"
+          },
+          "fill": {
+            "value": "#ffffff"
+          }
+        }
+      }
+    },
+
+    {
+      "type": "text",
+      "encode": {
+        "enter": {
+          "x": {
+            "value": 2900
+          },
+          "y": {
+            "signal": "headerHeight + 102"
+          },
+          "text": {
+            "value": "USER"
+          },
+          "font": {
+            "value": "Times New Roman"
+          },
+          "fontSize": {
+            "value": 20
+          },
+          "fontWeight": {
+            "value": "bold"
+          },
+          "fill": {
+            "value": "#ffffff"
+          }
+        }
+      }
+    },
+
+    {
+      "type": "text",
+      "encode": {
+        "enter": {
+          "x": {
+            "value": 3150
+          },
+          "y": {
+            "signal": "headerHeight + 102"
+          },
+          "text": {
+            "value": "ACTION"
+          },
+          "font": {
+            "value": "Times New Roman"
+          },
+          "fontSize": {
+            "value": 20
+          },
+          "fontWeight": {
+            "value": "bold"
+          },
+          "fill": {
+            "value": "#ffffff"
+          }
+        }
+      }
+    },
+
+    {
+      "type": "text",
+      "encode": {
+        "enter": {
+          "x": {
+            "value": 3400
+          },
+          "y": {
+            "signal": "headerHeight + 102"
+          },
+          "text": {
+            "value": "SERVICE"
+          },
+          "font": {
+            "value": "Times New Roman"
+          },
+          "fontSize": {
+            "value": 20
+          },
+          "fontWeight": {
+            "value": "bold"
+          },
+          "fill": {
+            "value": "#ffffff"
+          }
+        }
+      }
+    },
+
+    {
+      "type": "text",
+      "encode": {
+        "enter": {
+          "x": {
+            "value": 3700
+          },
+          "y": {
+            "signal": "headerHeight + 102"
+          },
+          "text": {
+            "value": "PROTOCOL"
+          },
+          "font": {
+            "value": "Times New Roman"
+          },
+          "fontSize": {
+            "value": 20
+          },
+          "fontWeight": {
+            "value": "bold"
+          },
+          "fill": {
+            "value": "#ffffff"
+          }
+        }
+      }
+    },
+
+    {
+      "name": "rowBackgrounds",
+      "type": "rect",
+      "from": {
+        "data": "rawAlerts"
+      },
+      "encode": {
+        "enter": {
+          "x": {
+            "value": 0
+          },
+          "width": {
+            "signal": "width"
+          },
+          "height": {
+            "signal": "rowHeight"
+          },
+          "cornerRadius": {
+            "value": 4
+          },
+          "cursor": {
+            "value": "pointer"
+          }
+        },
+        "update": {
+          "y": {
+            "signal": "headerHeight + 130 + (datum.row_number - 1) * rowHeight"
+          },
+          "fill": [
+            {
+              "test": "datum.row_number === selectedRow",
+              "value": "#26384a"
+            },
+            {
+              "test": "datum.row_number % 2 === 0",
+              "value": "#111820"
+            },
+            {
+              "value": "#0d131a"
+            }
+          ]
+        }
+      }
+    },
+
+    {
+      "type": "text",
+      "from": {
+        "data": "rawAlerts"
+      },
+      "encode": {
+        "enter": {
+          "font": {
+            "value": "Segoe UI Historic"
+          },
+          "fontSize": {
+            "value": 17
+          },
+          "baseline": {
+            "value": "middle"
+          }
+        },
+        "update": {
+          "x": {
+            "value": 25
+          },
+          "y": {
+            "signal": "headerHeight + 130 + (datum.row_number - 1) * rowHeight + rowHeight / 2"
+          },
+          "text": {
+            "signal": "datum.timestamp"
+          },
+          "fill": {
+            "signal": "datum.row_number === selectedRow ? '#ffffff' : '#d8dee9'"
+          }
+        }
+      }
+    },
+
+    {
+      "type": "text",
+      "from": {
+        "data": "rawAlerts"
+      },
+      "encode": {
+        "enter": {
+          "font": {
+            "value": "Segoe UI Historic"
+          },
+          "fontSize": {
+            "value": 17
+          },
+          "baseline": {
+            "value": "middle"
+          }
+        },
+        "update": {
+          "x": {
+            "value": 300
+          },
+          "y": {
+            "signal": "headerHeight + 130 + (datum.row_number - 1) * rowHeight + rowHeight / 2"
+          },
+          "text": {
+            "signal": "datum.firewall"
+          },
+          "fill": {
+            "signal": "datum.row_number === selectedRow ? '#ffffff' : '#d8dee9'"
+          }
+        }
+      }
+    },
+
+    {
+      "type": "text",
+      "from": {
+        "data": "rawAlerts"
+      },
+      "encode": {
+        "enter": {
+          "font": {
+            "value": "Segoe UI Historic"
+          },
+          "fontSize": {
+            "value": 17
+          },
+          "baseline": {
+            "value": "middle"
+          }
+        },
+        "update": {
+          "x": {
+            "value": 800
+          },
+          "y": {
+            "signal": "headerHeight + 130 + (datum.row_number - 1) * rowHeight + rowHeight / 2"
+          },
+          "text": {
+            "signal": "datum.severity"
+          },
+          "fill": {
+            "signal": "datum.row_number === selectedRow ? '#ffffff' : '#d8dee9'"
+          }
+        }
+      }
+    },
+
+    {
+      "type": "text",
+      "from": {
+        "data": "rawAlerts"
+      },
+      "encode": {
+        "enter": {
+          "font": {
+            "value": "Segoe UI Historic"
+          },
+          "fontSize": {
+            "value": 17
+          },
+          "baseline": {
+            "value": "middle"
+          }
+        },
+        "update": {
+          "x": {
+            "value": 1050
+          },
+          "y": {
+            "signal": "headerHeight + 130 + (datum.row_number - 1) * rowHeight + rowHeight / 2"
+          },
+          "text": {
+            "signal": "datum.type"
+          },
+          "fill": {
+            "signal": "datum.row_number === selectedRow ? '#ffffff' : '#d8dee9'"
+          }
+        }
+      }
+    },
+
+    {
+      "type": "text",
+      "from": {
+        "data": "rawAlerts"
+      },
+      "encode": {
+        "enter": {
+          "font": {
+            "value": "Segoe UI Historic"
+          },
+          "fontSize": {
+            "value": 17
+          },
+          "baseline": {
+            "value": "middle"
+          }
+        },
+        "update": {
+          "x": {
+            "value": 1350
+          },
+          "y": {
+            "signal": "headerHeight + 130 + (datum.row_number - 1) * rowHeight + rowHeight / 2"
+          },
+          "text": {
+            "signal": "datum.event"
+          },
+          "fill": {
+            "signal": "datum.row_number === selectedRow ? '#ffffff' : '#d8dee9'"
+          }
+        }
+      }
+    },
+
+    {
+      "type": "text",
+      "from": {
+        "data": "rawAlerts"
+      },
+      "encode": {
+        "enter": {
+          "font": {
+            "value": "Segoe UI Historic"
+          },
+          "fontSize": {
+            "value": 17
+          },
+          "baseline": {
+            "value": "middle"
+          }
+        },
+        "update": {
+          "x": {
+            "value": 2150
+          },
+          "y": {
+            "signal": "headerHeight + 130 + (datum.row_number - 1) * rowHeight + rowHeight / 2"
+          },
+          "text": {
+            "signal": "datum.source_ip"
+          },
+          "fill": {
+            "signal": "datum.row_number === selectedRow ? '#ffffff' : '#d8dee9'"
+          }
+        }
+      }
+    },
+
+    {
+      "type": "text",
+      "from": {
+        "data": "rawAlerts"
+      },
+      "encode": {
+        "enter": {
+          "font": {
+            "value": "Segoe UI Historic"
+          },
+          "fontSize": {
+            "value": 17
+          },
+          "baseline": {
+            "value": "middle"
+          }
+        },
+        "update": {
+          "x": {
+            "value": 2450
+          },
+          "y": {
+            "signal": "headerHeight + 130 + (datum.row_number - 1) * rowHeight + rowHeight / 2"
+          },
+          "text": {
+            "signal": "datum.destination_ip"
+          },
+          "fill": {
+            "signal": "datum.row_number === selectedRow ? '#ffffff' : '#d8dee9'"
+          }
+        }
+      }
+    },
+
+    {
+      "type": "text",
+      "from": {
+        "data": "rawAlerts"
+      },
+      "encode": {
+        "enter": {
+          "font": {
+            "value": "Segoe UI Historic"
+          },
+          "fontSize": {
+            "value": 17
+          },
+          "baseline": {
+            "value": "middle"
+          }
+        },
+        "update": {
+          "x": {
+            "value": 2900
+          },
+          "y": {
+            "signal": "headerHeight + 130 + (datum.row_number - 1) * rowHeight + rowHeight / 2"
+          },
+          "text": {
+            "signal": "datum.user"
+          },
+          "fill": {
+            "signal": "datum.row_number === selectedRow ? '#ffffff' : '#d8dee9'"
+          }
+        }
+      }
+    },
+
+    {
+      "type": "text",
+      "from": {
+        "data": "rawAlerts"
+      },
+      "encode": {
+        "enter": {
+          "font": {
+            "value": "Segoe UI Historic"
+          },
+          "fontSize": {
+            "value": 17
+          },
+          "baseline": {
+            "value": "middle"
+          }
+        },
+        "update": {
+          "x": {
+            "value": 3150
+          },
+          "y": {
+            "signal": "headerHeight + 130 + (datum.row_number - 1) * rowHeight + rowHeight / 2"
+          },
+          "text": {
+            "signal": "datum.action"
+          },
+          "fill": {
+            "signal": "datum.row_number === selectedRow ? '#ffffff' : '#d8dee9'"
+          }
+        }
+      }
+    },
+
+    {
+      "type": "text",
+      "from": {
+        "data": "rawAlerts"
+      },
+      "encode": {
+        "enter": {
+          "font": {
+            "value": "Segoe UI Historic"
+          },
+          "fontSize": {
+            "value": 17
+          },
+          "baseline": {
+            "value": "middle"
+          }
+        },
+        "update": {
+          "x": {
+            "value": 3400
+          },
+          "y": {
+            "signal": "headerHeight + 130 + (datum.row_number - 1) * rowHeight + rowHeight / 2"
+          },
+          "text": {
+            "signal": "datum.service"
+          },
+          "fill": {
+            "signal": "datum.row_number === selectedRow ? '#ffffff' : '#d8dee9'"
+          }
+        }
+      }
+    },
+
+    {
+      "type": "text",
+      "from": {
+        "data": "rawAlerts"
+      },
+      "encode": {
+        "enter": {
+          "font": {
+            "value": "Segoe UI Historic"
+          },
+          "fontSize": {
+            "value": 17
+          },
+          "baseline": {
+            "value": "middle"
+          }
+        },
+        "update": {
+          "x": {
+            "value": 3700
+          },
+          "y": {
+            "signal": "headerHeight + 130 + (datum.row_number - 1) * rowHeight + rowHeight / 2"
+          },
+          "text": {
+            "signal": "datum.protocol"
+          },
+          "fill": {
+            "signal": "datum.row_number === selectedRow ? '#ffffff' : '#d8dee9'"
+          }
+        }
+      }
+    }
+  ]
+}
