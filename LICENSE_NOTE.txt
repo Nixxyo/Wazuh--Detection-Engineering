@@ -1,0 +1,1 @@
+Choose a license before publishing. For a security-configuration repository, Apache-2.0 or MIT are common permissive options; review the implications before selecting one.

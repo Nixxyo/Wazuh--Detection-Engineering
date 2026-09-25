@@ -1,0 +1,13 @@
+# Local/editor files
+.vscode/
+.idea/
+*.log
+*.tmp
+.DS_Store
+Thumbs.db
+
+# Local Wazuh/OpenSearch exports
+.env
+*.pem
+*.key
+secrets/
